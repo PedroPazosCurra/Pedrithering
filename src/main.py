@@ -26,12 +26,10 @@ def encuentra_valor_paleta_proximo(valor_sin_cuantizar, num_niveles_negro : int)
 
     error_cuantizacion = valor_sin_cuantizar - valor_cuantizado
 
-    # print("{} , {}   ->   {}".format(valor_sin_cuantizar, valor_cuantizado, error_cuantizacion))
-
     return valor_cuantizado, error_cuantizacion
 
 
-def cuantizar_imagen(imagen, num_niveles_negro : int = 2) -> tuple[Image.Image, np.ndarray]:
+def cuantizar_imagen(imagen : Image.Image, num_niveles_negro : int = 2) -> tuple[Image.Image, np.ndarray]:
 
     imagen_array = np.array(imagen)
     array_errores_cuantizacion = np.zeros([imagen_array.shape[0], imagen_array.shape[1]])
@@ -49,28 +47,86 @@ def cuantizar_imagen(imagen, num_niveles_negro : int = 2) -> tuple[Image.Image, 
     return imagen_salida, array_errores_cuantizacion
 
 
-def grayscale(imagen) -> Image.Image:
+def histograma(imagen : Image.Image) -> list:
+    """Devuelve el histograma de una imagen dada"""
+
+    assert(isinstance(imagen, Image.Image))
+
+    imagen_array = np.array(imagen)
+
+    try:
+        histograma = np.zeros((imagen_array.shape[2], 256))
+    except:
+        histograma = np.zeros((256))
+
+    for num_fila in range(imagen_array.shape[0]):
+        for num_columna in range(imagen_array.shape[1]):
+
+            pixel = imagen_array[num_fila, num_columna]
+
+            try: 
+                for canal in range(imagen_array.shape[2]):
+                        histograma[canal, round(pixel[canal])] += 1
+
+            except:
+                histograma[round(pixel)] += 1
+
+    return histograma
+
+
+def ecualizar_imagen(imagen : Image.Image) -> Image.Image:
+    """Ecualiza una imagen
+
+    Notas
+    ------------
+    Por ahora, convierte en greyscale. Ten en cuenta que convierte la imagen en greyscale.
+    """
+
+    imagen_array = np.array(imagen.convert('L'))
+    imagen_ecualizada_array = np.zeros_like(imagen_array)
+
+    # TODO: Implementar yo mismo la funcion de histograma
+    histograma_original, bins = np.histogram(imagen_array.flatten(), 256, [0,256])
+
+    # Calculo de sumatorio acumulativo
+    cumsum = np.cumsum(histograma_original)
+
+
+    cumsum_masked = np.ma.masked_equal(cumsum, 0)     # Quiero el minimo quitando el 0 
+    cumsum_masked = (cumsum_masked - cumsum_masked.min())*255 / (cumsum_masked.max() - cumsum_masked.min()) # ...aplico el algoritmo de ecualizacion
+    cumsum = np.ma.filled(cumsum_masked, 0).astype('uint8') # ...y vuelvo a añadir los 0's
+
+    # Listo, tenemos un mapa/aplicación Img. Original -> Img. Ecualizada
+    imagen_ecualizada_array = cumsum[imagen_array]
+    imagen_salida = Image.fromarray(imagen_ecualizada_array)
+    return imagen_salida
+
+
+def greyscale(imagen) -> Image.Image:
     """Convierte una imagen dada a escala de grises."""
 
     imagen_array = np.array(imagen)
-    imagen_grayscale = np.zeros([imagen_array.shape[0], imagen_array.shape[1]])
+    imagen_greyscale = np.zeros([imagen_array.shape[0], imagen_array.shape[1]])
 
     for i, fila in enumerate(imagen_array):
         for j, pixel in enumerate(fila):
 
             valor_gris = round(np.sum(pixel) / 3)
             
-            imagen_grayscale[i,j] = valor_gris
+            imagen_greyscale[i,j] = valor_gris
 
-    imagen_salida = Image.fromarray(imagen_grayscale)
-    
+    imagen_salida = Image.fromarray(imagen_greyscale)
     return imagen_salida
 
 
-def floyd_steinberg_dithering(imagen, num_niveles_negro : int = 2):
+def floyd_steinberg_dithering(imagen : Image.Image, num_niveles_negro : int = 2):
 
-    imagen_grayscale = grayscale(imagen)
-    imagen_cuantizada_array = np.array(imagen_grayscale)
+    assert(isinstance(imagen, Image.Image))
+    assert(isinstance(num_niveles_negro, int))
+    assert num_niveles_negro > 0, "El numero de grises de la escala debe ser igual o mayores que 1."
+
+    imagen_greyscale = greyscale(imagen)
+    imagen_cuantizada_array = np.array(imagen_greyscale)
 
     num_filas, num_columnas = imagen_cuantizada_array.shape
 
@@ -95,36 +151,28 @@ def floyd_steinberg_dithering(imagen, num_niveles_negro : int = 2):
 
 
 def probar_floyd_steinberg(nombre_imagen: str, num_grises : int):
-    
-    #imagen = ImageOps.equalize(importar_imagen("amiguito_adorable.jpg"))
-    #imagen = importar_imagen("minino_dormilon.jpg")
-    #imagen = importar_imagen("bestia_abominable.jpg")
 
     imagen = ImageOps.equalize(importar_imagen(nombre_imagen))
-
-    #imagen_grayscale = grayscale(imagen)
-    #imagen_cuantizada, _ = cuantizar_imagen(imagen_grayscale, num_grises)
     imagen_dithered = floyd_steinberg_dithering(imagen, num_grises)
-
-    #imagen_grayscale.show("greyscale")
-    #imagen_cuantizada.show("cuantizada")
     imagen_dithered.show("dither")
 
 
 def main(num_grises : int = 2):
 
-    imagen = ImageOps.equalize(importar_imagen("amiguito_adorable.jpg"))
+    imagen = ecualizar_imagen(importar_imagen("amiguito_adorable.jpg"))
+    imagen.show()
+
     #imagen = importar_imagen("minino_dormilon.jpg")
     #imagen = importar_imagen("bestia_abominable.jpg")
     #imagen = ImageOps.equalize(importar_imagen("bestia_abominable.jpg"))
 
-    #imagen_grayscale = grayscale(imagen)
-    #imagen_cuantizada, _ = cuantizar_imagen(imagen_grayscale, num_grises)
-    imagen_dithered = floyd_steinberg_dithering(imagen, num_grises)
+    #imagen_greyscale = greyscale(imagen)
+    #imagen_cuantizada, _ = cuantizar_imagen(imagen_greyscale, num_grises)
+    #imagen_dithered = floyd_steinberg_dithering(imagen, num_grises)
 
-    #imagen_grayscale.show("greyscale")
+    #imagen_greyscale.show("greyscale")
     #imagen_cuantizada.show("cuantizada")
-    imagen_dithered.show("dither")
+    #imagen_dithered.show("dither")
 
 
 if __name__ == '__main__':
