@@ -47,8 +47,8 @@ def cuantizar_imagen(imagen : Image.Image, num_niveles_negro : int = 2) -> tuple
     return imagen_salida, array_errores_cuantizacion
 
 
-def histograma(imagen : Image.Image) -> list:
-    """Devuelve el histograma de una imagen dada"""
+def histograma(imagen : Image.Image):
+    """Devuelve el histograma y los binarios de una imagen dada"""
 
     assert(isinstance(imagen, Image.Image))
 
@@ -65,8 +65,8 @@ def histograma(imagen : Image.Image) -> list:
             pixel = imagen_array[num_fila, num_columna]
 
             try: 
-                for canal in range(imagen_array.shape[2]):
-                        histograma[canal, round(pixel[canal])] += 1
+                for canal, valor in enumerate(pixel):
+                        histograma[canal, valor] += 1
 
             except:
                 histograma[round(pixel)] += 1
@@ -86,15 +86,15 @@ def ecualizar_imagen(imagen : Image.Image) -> Image.Image:
     imagen_ecualizada_array = np.zeros_like(imagen_array)
 
     # TODO: Implementar yo mismo la funcion de histograma
-    histograma_original, bins = np.histogram(imagen_array.flatten(), 256, [0,256])
+    histograma_original = histograma(imagen)
 
     # Calculo de sumatorio acumulativo
     cumsum = np.cumsum(histograma_original)
 
-
-    cumsum_masked = np.ma.masked_equal(cumsum, 0)     # Quiero el minimo quitando el 0 
-    cumsum_masked = (cumsum_masked - cumsum_masked.min())*255 / (cumsum_masked.max() - cumsum_masked.min()) # ...aplico el algoritmo de ecualizacion
-    cumsum = np.ma.filled(cumsum_masked, 0).astype('uint8') # ...y vuelvo a añadir los 0's
+    # Algoritmo de ecualizacion
+    cumsum_masked = np.ma.masked_equal(cumsum, 0)     
+    cumsum_masked = (cumsum_masked - cumsum_masked.min())*255 / (cumsum_masked.max() - cumsum_masked.min()) 
+    cumsum = np.ma.filled(cumsum_masked, 0).astype('uint8')
 
     # Listo, tenemos un mapa/aplicación Img. Original -> Img. Ecualizada
     imagen_ecualizada_array = cumsum[imagen_array]
@@ -102,7 +102,7 @@ def ecualizar_imagen(imagen : Image.Image) -> Image.Image:
     return imagen_salida
 
 
-def greyscale(imagen) -> Image.Image:
+def greyscale(imagen : Image.Image) -> Image.Image:
     """Convierte una imagen dada a escala de grises."""
 
     imagen_array = np.array(imagen)
@@ -158,6 +158,12 @@ def probar_floyd_steinberg(nombre_imagen: str, num_grises : int):
 
 
 def main(num_grises : int = 2):
+
+    imagen = greyscale(importar_imagen("minino_dormilon.jpg"))
+    imagen_array = np.array(imagen)
+    histograma1 = histograma(imagen)
+    histograma2, _ = np.histogram(imagen_array.flatten(), 256, [0,256])
+    assert(np.equal(histograma1, histograma2))
 
     imagen = ecualizar_imagen(importar_imagen("amiguito_adorable.jpg"))
     imagen.show()
