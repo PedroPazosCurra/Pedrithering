@@ -6,10 +6,10 @@
 
 from main import probar_floyd_steinberg
 
-
+"minino_con_perdida.jpg"
 "amiguito_adorable.jpg"
 "minino_dormilon.jpg"
 "bestia_abominable.jpg"
 
 print("hola!")
-probar_floyd_steinberg("minino_dormilon.jpg", 2)
+probar_floyd_steinberg("bestia_abominable.jpg", 6)
