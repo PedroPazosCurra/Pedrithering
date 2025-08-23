@@ -11,6 +11,7 @@ from gestion_recursos import importar_imagen_a_QImage
 import sys
 from threading import Thread
 from time import sleep
+from datetime import datetime
 import math
 
 
@@ -46,6 +47,9 @@ class Ventana_Custom(QtWidgets.QWidget):
         # DEBUG Aviso personalizado
         #self.aviso = Aviso_Personalizado()
         #self.aviso.ensenha()
+
+        self.ultima_medida_posicion_inercia = (self.x(),self.y())
+        self.inercia = 0
         
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
@@ -53,17 +57,14 @@ class Ventana_Custom(QtWidgets.QWidget):
         qimage_mascara = importar_imagen_a_QImage("mascara_ventana.png")
         self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
 
+        # Error cargando pixmap
         if self.pixmap.isNull():
 
-            msg = QtWidgets.QMessageBox(self)
-            msg.setWindowTitle("Error cargando imagen")
-            msg.setText(
-                f"No se pudo crear QPixmap.\n"
-                f"Formatos soportados: "
-                f"{', '.join(fmt.data().decode() for fmt in QtGui.QImageReader.supportedImageFormats())}"
-            )
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-            msg.show()
+            self.aviso = Aviso_Personalizado(titulo="Error cargando imagen", 
+                                             mensaje=   f"No se pudo crear QPixmap.\n"
+                                                        f"Formatos soportados: "
+                                                        f"{', '.join(fmt.data().decode() for fmt in QtGui.QImageReader.supportedImageFormats())}")
+            self.aviso.ensenha()
             return
 
         
@@ -72,6 +73,11 @@ class Ventana_Custom(QtWidgets.QWidget):
         # Animacion de movimiento
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.loop_movimiento)
+        self.timer.start(50)
+
+        # Calculo de inercia
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.loop_calcular_inercia)
         self.timer.start(50)
 
 
@@ -105,11 +111,23 @@ class Ventana_Custom(QtWidgets.QWidget):
 
 
     def loop_movimiento(self):
-        """Animacion de la ventana"""
+        """Animacion de bamboleo de la ventana"""
 
-        x = self.x() + 1
-        y = self.y() + 1
+        x = self.x() + 0
+        y = round(self.y() + 3*math.sin(round(datetime.now().microsecond / 150000, 2)))
         self.move(x, y) 
+
+    
+    def loop_calcular_inercia(self):
+        """Bucle de calculo de inercia"""
+        # TODO: Sistema de inercia
+
+        ultimo_x, ultimo_y = self.ultima_medida_posicion_inercia
+        x_actual, y_actual = self.x(), self.y()
+
+        self.inercia = math.dist([ultimo_x, ultimo_y], [x_actual, y_actual])
+        print("Inercia actual =" + self.inercia.__str__())
+        self.ultima_medida_posicion_inercia = (x_actual, y_actual)
 
  
 
