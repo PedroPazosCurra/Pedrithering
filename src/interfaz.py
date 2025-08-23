@@ -50,6 +50,7 @@ class Ventana_Custom(QtWidgets.QWidget):
 
         self.ultima_medida_posicion_inercia = (self.x(),self.y())
         self.inercia = 0
+        self.agarrado = False
         
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
@@ -94,7 +95,7 @@ class Ventana_Custom(QtWidgets.QWidget):
         if event.button() == Qt.MouseButton.LeftButton:
 
             print("¡Oye! Me haces cosquillas")
-
+            self.agarrado = True
             self._drag = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
             event.accept()
 
@@ -109,13 +110,23 @@ class Ventana_Custom(QtWidgets.QWidget):
         
         event.accept()
 
+    
+    def mouseReleaseEvent(self, event):
+        """Callback de soltar ratón"""
+
+        self.agarrado = False
+        print("Qué alivio, macho...!")
+
+
 
     def loop_movimiento(self):
         """Animacion de bamboleo de la ventana"""
 
-        x = self.x() + 0
-        y = round(self.y() + 3*math.sin(round(datetime.now().microsecond / 150000, 2)))
-        self.move(x, y) 
+        if not self.agarrado:
+
+            x = self.x() + 0
+            y = round(self.y() + 3*math.sin(round(datetime.now().microsecond / 150000, 2)))
+            self.move(x, y) 
 
     
     def loop_calcular_inercia(self):

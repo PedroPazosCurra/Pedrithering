@@ -20,11 +20,12 @@ def ruta_recursos(nombre_archivo : str) -> str:
 def importar_imagen(nombre_archivo : str) -> Image:
     """Devuelve la imagen dado el nombre del archivo, buscándola en los recursos del programa"""
 
+    ruta_recurso = ruta_recursos(nombre_archivo)
+
     try:
-        ruta_recurso = ruta_recursos(nombre_archivo)
         return Image.open(ruta_recurso)
     except:
-        raise Exception("No se encuentra en /rsc el archivo {}".format(nombre_archivo))
+        raise Exception("Error accediendo a {}".format(ruta_recurso))
     
 
 def importar_imagen_a_QImage(nombre_archivo : str):
