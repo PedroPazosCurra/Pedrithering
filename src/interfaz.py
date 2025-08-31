@@ -50,6 +50,7 @@ class Ventana_Custom(QtWidgets.QWidget):
 
         self.ultima_medida_posicion_inercia = (self.x(),self.y())
         self.inercia = 0
+        self.direccion_movimiento = 0
         self.agarrado = False
         
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
@@ -124,8 +125,17 @@ class Ventana_Custom(QtWidgets.QWidget):
 
         if not self.agarrado:
 
-            x = self.x() + 0
-            y = round(self.y() + 3*math.sin(round(datetime.now().microsecond / 150000, 2)))
+            valor_bamboleo = self.inercia <= 1 and (3*math.sin(round(datetime.now().microsecond / 150000, 2)))
+
+            nuevo_x = self.x() + round(math.sin(self.direccion_movimiento) * self.inercia/5)
+            nuevo_y = self.y() + round(math.cos(self.direccion_movimiento) * self.inercia/5 + valor_bamboleo)
+
+            # Confino las coordenadas a la ventana para que no se salga
+            x = max(min(nuevo_x, ANCHO_VENTANA), 0)
+            y = max(min(nuevo_y, ALTO_VENTANA), 0)
+
+            print(str(x) + " , " + str(y) + " / " + str(self.direccion_movimiento))
+
             self.move(x, y) 
 
     
@@ -133,12 +143,23 @@ class Ventana_Custom(QtWidgets.QWidget):
         """Bucle de calculo de inercia"""
         # TODO: Sistema de inercia
 
-        ultimo_x, ultimo_y = self.ultima_medida_posicion_inercia
-        x_actual, y_actual = self.x(), self.y()
+        if self.agarrado:
 
-        self.inercia = math.dist([ultimo_x, ultimo_y], [x_actual, y_actual])
-        print("Inercia actual =" + self.inercia.__str__())
-        self.ultima_medida_posicion_inercia = (x_actual, y_actual)
+            ultimo_x, ultimo_y = self.ultima_medida_posicion_inercia
+            x_actual, y_actual = self.x(), self.y()
+
+            self.direccion_movimiento = math.atan2(x_actual - ultimo_x, y_actual - ultimo_y) # (radianes)
+            self.inercia = math.dist([ultimo_x, ultimo_y], [x_actual, y_actual])
+
+            self.ultima_medida_posicion_inercia = (x_actual, y_actual)
+
+        else: 
+            if self.inercia > 0:
+                self.inercia -= round(self.inercia/10)
+            else:
+                self.inercia = 0
+
+        #print("Inercia actual =" + str(self.inercia) + "  Direccion = " + str(self.direccion_movimiento))
 
  
 
