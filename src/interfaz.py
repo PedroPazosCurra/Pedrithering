@@ -7,7 +7,7 @@
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication
 from PIL import ImageQt
-from gestion_recursos import importar_imagen_a_QImage
+from gestion_recursos import importar_imagen_en_QImage
 import sys
 from datetime import datetime
 import math
@@ -26,6 +26,7 @@ FILENAME_MASCARA_VENTANA = "mascara_ventana.png"
 #LIMITE_SUPERIOR_ANCHO = 600
 #LIMITE_SUPERIOR_ALTO = 400
 
+# TODO: Todas las clases de la interfaz comparten métodos y atributos - Crear una clase padre Ventana_Custom que las otras hereden/implementen
 
 
 class Aviso_Personalizado(QtWidgets.QMessageBox):
@@ -37,8 +38,20 @@ class Aviso_Personalizado(QtWidgets.QMessageBox):
         self.mensaje = mensaje
         self.icono = self.Icon.Critical
 
+        qimage_mascara = importar_imagen_en_QImage("aviso.png")
+        self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
+
+
+    def paintEvent(self, event):
+        """Evento de actualizacion"""
+
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
+        painter.drawPixmap(0, 0, self.pixmap)
+
+
     def ensenha(self):
-            """Abstrae QMessageBox.show()"""
+            """Abstrae QMessageBox.show() con inicialización aparte"""
 
             self.setWindowTitle(self.titulo)
             self.setText(self.mensaje)
@@ -51,13 +64,13 @@ class Ventana_Bocadillo_Mensaje(QtWidgets.QWidget):
 
     def __init__(self, mensaje : str = "Error desconocido hasta que se demuestre lo contrario"):
         super().__init__()
+
+        self.mensaje = mensaje
         
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
 
-        self.mensaje = mensaje
-
-        qimage_mascara = importar_imagen_a_QImage("aviso.png")
+        qimage_mascara = importar_imagen_en_QImage("bocadillo.png", 0.3)
         self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
 
         # Error cargando pixmap
@@ -69,10 +82,32 @@ class Ventana_Bocadillo_Mensaje(QtWidgets.QWidget):
                                                         f"{', '.join(fmt.data().decode() for fmt in QtGui.QImageReader.supportedImageFormats())}")
             self.aviso.ensenha()
             return
+        
+        self.resize(LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ANCHO, LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
+
+        # Animacion de movimiento
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.loop_movimiento)
+        self.timer.start(20)
+        
+
+    def paintEvent(self, event):
+        """Evento de actualizacion"""
+
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
+        painter.drawPixmap(0, 0, self.pixmap)
+
+
+    def loop_movimiento(self):
+        """Animacion de bamboleo de la ventana"""
+
+        # TODO: El bocadillo tiene una dependencia con el widget que lo llama, por lo que voy a tener que hacer alguna estructura padre-hijo para facilitar el movimiento, que será igual que o alrededor del padre
+        #self.move(x, y) 
 
 
     def ensenha(self):
-            """Aparece esta ventana en las coordenadas de la ventana principal"""
+            """Abstrae QWidget.show() con inicialización aparte"""
 
             #self.setText(self.mensaje)
             self.show()
@@ -98,7 +133,7 @@ class Ventana_Custom(QtWidgets.QWidget):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
 
-        qimage_mascara = importar_imagen_a_QImage("mascara_ventana.png")
+        qimage_mascara = importar_imagen_en_QImage(nombre_archivo="mascara_ventana.png", ratio_tamanho=2)
         self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
 
         # Error cargando pixmap
@@ -187,8 +222,8 @@ class Ventana_Custom(QtWidgets.QWidget):
 
             self.direccion_movimiento = math.atan2(nuevo_x - self.x(), nuevo_y - self.y())
 
-            x = max(min(nuevo_x, LIMITE_SUPERIOR_ANCHO-ANCHO_VENTANA), LIMITE_INFERIOR_ANCHO+1)
-            y = max(min(nuevo_y, LIMITE_SUPERIOR_ALTO-ALTO_VENTANA), LIMITE_INFERIOR_ALTO+1)
+            x = max(min(nuevo_x, LIMITE_SUPERIOR_ANCHO - ANCHO_VENTANA), LIMITE_INFERIOR_ANCHO+1)
+            y = max(min(nuevo_y, LIMITE_SUPERIOR_ALTO - ALTO_VENTANA), LIMITE_INFERIOR_ALTO+1)
 
             print(str(x) + " , " + str(y) + " / " + str(self.direccion_movimiento))
 
@@ -221,4 +256,8 @@ if __name__ == "__main__":
     screen = app.primaryScreen()
     ventana = Ventana_Custom(screen.size().width, screen.size().height)
     ventana.show()
+
+    bocadillo = Ventana_Bocadillo_Mensaje()
+    bocadillo.show()
+
     sys.exit(app.exec())
