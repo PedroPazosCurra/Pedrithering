@@ -18,15 +18,52 @@ LIMITE_SUPERIOR_ANCHO = 1920 # TODO: Tomar dimensiones de la pantalla en lugar d
 LIMITE_SUPERIOR_ALTO = 1080
 LIMITE_INFERIOR_ANCHO = 0
 LIMITE_INFERIOR_ALTO = 0
-ANCHO_VENTANA = 100 # TODO: Tomar dimensiones del png en lugar de hardcodear esto
+ANCHO_VENTANA = 180 # TODO: Tomar dimensiones del png en lugar de hardcodear esto
 ALTO_VENTANA = 100
 FILENAME_MASCARA_VENTANA = "mascara_ventana.png"
+
+MENSAJE_DESCONOCIDO = "Error desconocido hasta que se demuestre lo contrario"
+
+BOCADILLO_X_RELATIVA = 280
+BOCADILLO_Y_RELATIVA = 120
+
+PERIODO_ACTUALIZACION_MOVIMIENTO = 20 # Calculo cada 20 ms
+VENTANA_PERIODO_ACTUALIZACION_INERCIA = 20 # Calculo cada 20 ms
+UPTIME_BOCADILLO = 1000 # En ms
 
 # Debug
 #LIMITE_SUPERIOR_ANCHO = 600
 #LIMITE_SUPERIOR_ALTO = 400
 
 # TODO: Todas las clases de la interfaz comparten métodos y atributos - Crear una clase padre Ventana_Custom que las otras hereden/implementen
+class Ventana_Personalizada_Madre(QtWidgets.QWidget):
+    """Clase madre con comportamientos comunes que comparten otras ventanas"""
+
+    def __init__(self, ancho_pantalla, alto_pantalla):
+        super().__init__()
+        self.ancho_pantalla = ancho_pantalla
+        self.alto_pantalla = alto_pantalla
+
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
+
+        # Animacion de movimiento
+        self.timer_movimiento = QTimer(self)
+        self.timer_movimiento.timeout.connect(self.loop_movimiento)
+        self.timer_movimiento.start(PERIODO_ACTUALIZACION_MOVIMIENTO)
+
+    def paintEvent(self, event):
+        """Evento de actualizacion"""
+
+        # Pinta el png actual
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
+        painter.drawPixmap(0, 0, self.pixmap)
+
+    def loop_movimiento(self):
+        """Calculo de movimiento de widget"""
+        """Cada clase implementa el suyo, lo que importa aquí es que self.timer pueda enlazarse a self.loop_movimiento"""
+        print("{0} no implementa loop_movimiento. Por defecto, queda sin implementacion.".format(type(self).__name__))
 
 
 class Aviso_Personalizado(QtWidgets.QMessageBox):
@@ -59,17 +96,22 @@ class Aviso_Personalizado(QtWidgets.QMessageBox):
             self.show()
 
 
-class Ventana_Bocadillo_Mensaje(QtWidgets.QWidget):
+class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
     """Bocadillo que soltará la ventana principal en determinadas ocasiones"""
 
-    def __init__(self, mensaje : str = "Error desconocido hasta que se demuestre lo contrario"):
-        super().__init__()
+    def __init__(self, ancho_pantalla, alto_pantalla, mensaje : str = MENSAJE_DESCONOCIDO):
+        super().__init__(ancho_pantalla, alto_pantalla)
 
-        self.mensaje = mensaje
-        
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
+        self.x_actual = 0
+        self.y_actual = 0
 
+        # Label con texto
+        # TODO Parametrizar posicion label con tamanho de bocadillo
+        # TODO Echar un ojo a fuente, color, alinear, ...
+        self.label_mensaje = QtWidgets.QLabel(self)
+        self.label_mensaje.setText(mensaje)
+        self.label_mensaje.move(self.x_actual, self.y_actual+50) 
+    
         qimage_mascara = importar_imagen_en_QImage("bocadillo.png", 0.3)
         self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
 
@@ -84,11 +126,6 @@ class Ventana_Bocadillo_Mensaje(QtWidgets.QWidget):
             return
         
         self.resize(LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ANCHO, LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
-
-        # Animacion de movimiento
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.loop_movimiento)
-        self.timer.start(20)
         
 
     def paintEvent(self, event):
@@ -100,24 +137,30 @@ class Ventana_Bocadillo_Mensaje(QtWidgets.QWidget):
 
 
     def loop_movimiento(self):
-        """Animacion de bamboleo de la ventana"""
-
-        # TODO: El bocadillo tiene una dependencia con el widget que lo llama, por lo que voy a tener que hacer alguna estructura padre-hijo para facilitar el movimiento, que será igual que o alrededor del padre
-        #self.move(x, y) 
+        """Calculo de movimiento de widget"""
+        self.move(self.x_actual, self.y_actual) 
 
 
-    def ensenha(self):
-            """Abstrae QWidget.show() con inicialización aparte"""
+    def actualiza_posicion(self, x, y):
+        """Método expuesto a clase padre para mover el widget con él"""
+        self.x_actual = x - BOCADILLO_X_RELATIVA
+        self.y_actual = y - BOCADILLO_Y_RELATIVA
 
-            #self.setText(self.mensaje)
-            self.show()
+
+    def ensenha(self, mensaje = MENSAJE_DESCONOCIDO):
+        """Abstrae y expone a padre QWidget.show()"""
+        self.label_mensaje.setText(mensaje)
+        self.show()
+
+        QTimer.singleShot(UPTIME_BOCADILLO, self.hide)
 
 
-class Ventana_Custom(QtWidgets.QWidget):
+
+class Ventana_Custom(Ventana_Personalizada_Madre):
     """Clase de ventana personalizada con forma no ortodoxa"""
 
     def __init__(self, ancho_pantalla, alto_pantalla):
-        super().__init__()
+        super().__init__(ancho_pantalla, alto_pantalla)
 
         # DEBUG Aviso personalizado
         #self.aviso = Aviso_Personalizado()
@@ -128,13 +171,12 @@ class Ventana_Custom(QtWidgets.QWidget):
         self.direccion_movimiento = 0
         self.agarrado = False
 
-        self.bocadillo = Ventana_Bocadillo_Mensaje()
-        
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
+        self.bocadillo = Ventana_Bocadillo_Mensaje(screen.size().width(), screen.size().height())
+        self.bocadillo.ensenha()
 
-        qimage_mascara = importar_imagen_en_QImage(nombre_archivo="mascara_ventana.png", ratio_tamanho=2)
-        self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
+        self.qimage_mascara = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana.png", ratio_tamanho=2))
+        self.qimage_mascara_2 = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana_abollada.png", ratio_tamanho=2))
+        self.pixmap = self.qimage_mascara
 
         # Error cargando pixmap
         if self.pixmap.isNull():
@@ -147,32 +189,19 @@ class Ventana_Custom(QtWidgets.QWidget):
             return
 
         
-        self.resize(LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ANCHO, LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
-
-        # Animacion de movimiento
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.loop_movimiento)
-        self.timer.start(20)
+        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
 
         # Calculo de inercia
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.loop_calcular_inercia)
-        self.timer.start(20)
-
-
-    def paintEvent(self, event):
-        """Evento de actualizacion"""
-
-        painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
-        painter.drawPixmap(0, 0, self.pixmap)
+        self.timer.start(VENTANA_PERIODO_ACTUALIZACION_INERCIA)
 
     
     def mousePressEvent(self, event):
         """Callback de boton izquierdo mouse"""
         if event.button() == Qt.MouseButton.LeftButton:
 
-            print("¡Oye! Me haces cosquillas")
+            print("Click!")
             self.agarrado = True
             self._drag = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
             event.accept()
@@ -181,9 +210,12 @@ class Ventana_Custom(QtWidgets.QWidget):
     def mouseMoveEvent(self, event):
         """Callback de mover mouse en la pantalla"""
 
-        if event.buttons() & Qt.MouseButton.LeftButton:
-            
-            self.move(event.globalPosition().toPoint() - self._drag)
+        if event.buttons() & Qt.MouseButton.LeftButton and self.agarrado:
+
+            print("¡Oye! Bájame !! ")
+            nueva_posicion = event.globalPosition().toPoint() - self._drag
+            self.move(nueva_posicion)
+            self.bocadillo.actualiza_posicion(nueva_posicion.x(), nueva_posicion.y())
             event.accept()
         
         event.accept()
@@ -211,23 +243,37 @@ class Ventana_Custom(QtWidgets.QWidget):
             nuevo_y = self.y() + escalar_vector_movimiento_y + valor_bamboleo
 
             # Rebote en esquinas
-            if nuevo_x <= LIMITE_INFERIOR_ANCHO or nuevo_x >= LIMITE_SUPERIOR_ANCHO - ANCHO_VENTANA:
+            if nuevo_x <= 0 or nuevo_x >= self.ancho_pantalla - ANCHO_VENTANA:
+
                 nuevo_x = self.x() - escalar_vector_movimiento_x
-                # TODO: Cambio de png cuando rebote
-                #self.bocadillo.ensenha()
-            elif  nuevo_y <= LIMITE_INFERIOR_ALTO or nuevo_y >= LIMITE_SUPERIOR_ALTO - ALTO_VENTANA:
+
+                # Cambio png
+                self.pixmap = self.qimage_mascara
+                self.update()
+
+                # Bocadillo
+                self.bocadillo.ensenha("Boing !")
+
+            elif  nuevo_y <= 0 or nuevo_y >= self.alto_pantalla - ALTO_VENTANA:
+
                 nuevo_y = self.y() - escalar_vector_movimiento_y + valor_bamboleo
-                # TODO: Cambio de png cuando rebote
-                #self.bocadillo.ensenha()
+
+                # Cambio png
+                self.pixmap = self.qimage_mascara_2
+                self.update()
+
+                # Bocadillo
+                self.bocadillo.ensenha("Boooing ...!")
 
             self.direccion_movimiento = math.atan2(nuevo_x - self.x(), nuevo_y - self.y())
 
-            x = max(min(nuevo_x, LIMITE_SUPERIOR_ANCHO - ANCHO_VENTANA), LIMITE_INFERIOR_ANCHO+1)
-            y = max(min(nuevo_y, LIMITE_SUPERIOR_ALTO - ALTO_VENTANA), LIMITE_INFERIOR_ALTO+1)
+            x = max(min(nuevo_x, self.ancho_pantalla - ANCHO_VENTANA), 1)
+            y = max(min(nuevo_y, self.alto_pantalla - ALTO_VENTANA), 1)
 
             print(str(x) + " , " + str(y) + " / " + str(self.direccion_movimiento))
 
             self.move(x, y) 
+            self.bocadillo.actualiza_posicion(x,y)
 
     
     def loop_calcular_inercia(self):
@@ -254,10 +300,7 @@ class Ventana_Custom(QtWidgets.QWidget):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     screen = app.primaryScreen()
-    ventana = Ventana_Custom(screen.size().width, screen.size().height)
+    ventana = Ventana_Custom(screen.size().width(), screen.size().height())
     ventana.show()
-
-    bocadillo = Ventana_Bocadillo_Mensaje()
-    bocadillo.show()
 
     sys.exit(app.exec())
