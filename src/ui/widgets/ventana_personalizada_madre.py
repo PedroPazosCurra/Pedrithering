@@ -8,6 +8,7 @@ from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
 from config.constantes import *
 
+
 class Ventana_Personalizada_Madre(QtWidgets.QWidget):
     """Clase madre con comportamientos comunes que comparten otras ventanas"""
 
@@ -16,7 +17,7 @@ class Ventana_Personalizada_Madre(QtWidgets.QWidget):
         self.ancho_pantalla = ancho_pantalla
         self.alto_pantalla = alto_pantalla
 
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
+        self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint) # Ventana sin bordes y siempre arriba
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
 
         # Animacion de movimiento
