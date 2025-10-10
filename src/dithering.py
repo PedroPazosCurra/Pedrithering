@@ -6,7 +6,7 @@
 
 from PIL import Image
 import numpy as np
-from operaciones import a_greyscale, encuentra_valor_paleta_proximo, cuantizar_imagen
+from src.operaciones import a_greyscale, encuentra_valor_paleta_proximo, cuantizar_imagen
 
 def floyd_steinberg_dithering(imagen : Image.Image, num_niveles_negro : int = 2):
     """Algoritmo de dithering Floyd-Steinberg, que propaga el error de cuantización a razón de 7/16, 5/16, 3/16 y 1/15 según la posición del pixel en orden de iteración"""

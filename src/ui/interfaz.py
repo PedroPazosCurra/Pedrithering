@@ -5,95 +5,14 @@
 """
 
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QPoint, QSize, QTimer, QCoreApplication
-from PIL import ImageQt
-from gestion_recursos import importar_imagen_en_QImage
+from PyQt6.QtCore import Qt, QTimer
 import sys
 from datetime import datetime
 import math
-
-
-
-LIMITE_SUPERIOR_ANCHO = 1920 # TODO: Tomar dimensiones de la pantalla en lugar de hardcodear esto
-LIMITE_SUPERIOR_ALTO = 1080
-LIMITE_INFERIOR_ANCHO = 0
-LIMITE_INFERIOR_ALTO = 0
-ANCHO_VENTANA = 180 # TODO: Tomar dimensiones del png en lugar de hardcodear esto
-ALTO_VENTANA = 100
-FILENAME_MASCARA_VENTANA = "mascara_ventana.png"
-
-MENSAJE_DESCONOCIDO = "Error desconocido hasta que se demuestre lo contrario"
-
-BOCADILLO_X_RELATIVA = 280
-BOCADILLO_Y_RELATIVA = 120
-
-PERIODO_ACTUALIZACION_MOVIMIENTO = 20 # Calculo cada 20 ms
-VENTANA_PERIODO_ACTUALIZACION_INERCIA = 20 # Calculo cada 20 ms
-UPTIME_BOCADILLO = 1000 # En ms
-
-# Debug
-#LIMITE_SUPERIOR_ANCHO = 600
-#LIMITE_SUPERIOR_ALTO = 400
-
-# TODO: Todas las clases de la interfaz comparten métodos y atributos - Crear una clase padre Ventana_Custom que las otras hereden/implementen
-class Ventana_Personalizada_Madre(QtWidgets.QWidget):
-    """Clase madre con comportamientos comunes que comparten otras ventanas"""
-
-    def __init__(self, ancho_pantalla, alto_pantalla):
-        super().__init__()
-        self.ancho_pantalla = ancho_pantalla
-        self.alto_pantalla = alto_pantalla
-
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint) # Ventana sin bordes
-        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)
-
-        # Animacion de movimiento
-        self.timer_movimiento = QTimer(self)
-        self.timer_movimiento.timeout.connect(self.loop_movimiento)
-        self.timer_movimiento.start(PERIODO_ACTUALIZACION_MOVIMIENTO)
-
-    def paintEvent(self, event):
-        """Evento de actualizacion"""
-
-        # Pinta el png actual
-        painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
-        painter.drawPixmap(0, 0, self.pixmap)
-
-    def loop_movimiento(self):
-        """Calculo de movimiento de widget"""
-        """Cada clase implementa el suyo, lo que importa aquí es que self.timer pueda enlazarse a self.loop_movimiento"""
-        print("{0} no implementa loop_movimiento. Por defecto, queda sin implementacion.".format(type(self).__name__))
-
-
-class Aviso_Personalizado(QtWidgets.QMessageBox):
-    """Clase de alert personalizado cuya pinta en terminos esteticos queda por el momento relegada a mis futuras sinapsis"""
-
-    def __init__(self, titulo : str = "ERROR", mensaje : str = "Error desconocido hasta que se demuestre lo contrario"):
-        super().__init__()
-        self.titulo = titulo
-        self.mensaje = mensaje
-        self.icono = self.Icon.Critical
-
-        qimage_mascara = importar_imagen_en_QImage("aviso.png")
-        self.pixmap = QtGui.QPixmap.fromImage(qimage_mascara)
-
-
-    def paintEvent(self, event):
-        """Evento de actualizacion"""
-
-        painter = QtGui.QPainter(self)
-        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform, True)
-        painter.drawPixmap(0, 0, self.pixmap)
-
-
-    def ensenha(self):
-            """Abstrae QMessageBox.show() con inicialización aparte"""
-
-            self.setWindowTitle(self.titulo)
-            self.setText(self.mensaje)
-            self.setIcon(self.icono)
-            self.show()
+from rsc.gestion_recursos import importar_imagen_en_QImage
+from config.constantes import *
+from src.ui.widgets.ventana_personalizada_madre import Ventana_Personalizada_Madre
+from src.ui.widgets.aviso_personalizado import Aviso_Personalizado
 
 
 class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
@@ -125,8 +44,9 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
             self.aviso.ensenha()
             return
         
-        self.resize(LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ANCHO, LIMITE_SUPERIOR_ANCHO - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
-        
+        # Redimensionar ventana a la imagen
+        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) 
+
 
     def paintEvent(self, event):
         """Evento de actualizacion"""
@@ -171,11 +91,11 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
         self.direccion_movimiento = 0
         self.agarrado = False
 
-        self.bocadillo = Ventana_Bocadillo_Mensaje(screen.size().width(), screen.size().height())
+        self.bocadillo = Ventana_Bocadillo_Mensaje(ancho_pantalla, alto_pantalla)
         self.bocadillo.ensenha()
 
         self.qimage_mascara = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana.png", ratio_tamanho=2))
-        self.qimage_mascara_2 = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana_abollada.png", ratio_tamanho=2))
+        self.qimage_mascara_abollada = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana_abollada.png", ratio_tamanho=2))
         self.pixmap = self.qimage_mascara
 
         # Error cargando pixmap
@@ -187,9 +107,9 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
                                                         f"{', '.join(fmt.data().decode() for fmt in QtGui.QImageReader.supportedImageFormats())}")
             self.aviso.ensenha()
             return
-
         
-        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) # Redimensionar ventana a la imagen
+        # Redimensionar ventana a la imagen
+        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) 
 
         # Calculo de inercia
         self.timer = QTimer(self)
@@ -259,7 +179,7 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
                 nuevo_y = self.y() - escalar_vector_movimiento_y + valor_bamboleo
 
                 # Cambio png
-                self.pixmap = self.qimage_mascara_2
+                self.pixmap = self.qimage_mascara_abollada
                 self.update()
 
                 # Bocadillo
@@ -295,6 +215,15 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
 
         #print("Inercia actual =" + str(self.inercia) + "  Direccion = " + str(self.direccion_movimiento))
 
+
+def setup_interfaz():
+    """Punto de entrada expuesto"""
+
+    app = QtWidgets.QApplication(sys.argv)
+    screen = app.primaryScreen()
+    ventana = Ventana_Custom(screen.size().width(), screen.size().height())
+    ventana.show()
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

@@ -7,9 +7,9 @@
 from PIL import ImageOps
 import numpy as np
 import sys
-from gestion_recursos import importar_imagen
-from dithering import floyd_steinberg_dithering
-from operaciones import a_greyscale, histograma, ecualizar_imagen
+from rsc.gestion_recursos import importar_imagen
+from src.dithering import floyd_steinberg_dithering
+from src.operaciones import a_greyscale, histograma, ecualizar_imagen
 
 
 def probar_floyd_steinberg(nombre_imagen: str, num_grises : int):
