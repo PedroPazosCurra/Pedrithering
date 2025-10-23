@@ -16,6 +16,8 @@ class Ventana_Personalizada_Madre(QtWidgets.QWidget):
         super().__init__()
         self.ancho_pantalla = ancho_pantalla
         self.alto_pantalla = alto_pantalla
+        self.alto_ventana = 0
+        self.ancho_ventana = 0
 
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint) # Ventana sin bordes y siempre arriba
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground) # Fondo transparente (permite alfa en el PNG)

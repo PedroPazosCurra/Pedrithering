@@ -37,7 +37,10 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
 
         self.qimage_mascara_normal = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana.png", ratio_tamanho=2))
         self.qimage_mascara_abollada = QtGui.QPixmap.fromImage(importar_imagen_en_QImage(nombre_archivo="mascara_ventana_abollada.png", ratio_tamanho=2))
+
         self.pixmap = self.qimage_mascara_normal
+        self.alto_ventana = self.pixmap.height()
+        self.ancho_ventana = self.pixmap.width()
 
         # Error cargando pixmap
         if self.pixmap.isNull():
@@ -50,7 +53,7 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
             return
         
         # Redimensionar ventana a la imagen
-        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) 
+        self.resize(self.ancho_pantalla, self.alto_pantalla) 
 
         # Calculo de inercia
         self.timer = QTimer(self)
@@ -104,13 +107,15 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
             nuevo_y = self.y() + escalar_vector_movimiento_y + valor_bamboleo
 
             # Rebote en esquinas
-            choque_horizontal = (nuevo_x <= 0 or nuevo_x >= self.ancho_pantalla - ANCHO_VENTANA)
-            choque_vertical = (nuevo_y <= 0 or nuevo_y >= self.alto_pantalla - ALTO_VENTANA)
+            choque_horizontal = (nuevo_x <= 0 or nuevo_x >= self.ancho_pantalla - self.ancho_ventana)
+            choque_vertical = (nuevo_y <= 0 or nuevo_y >= self.alto_pantalla - self.alto_ventana)
 
             if choque_horizontal or choque_vertical:
 
                 # Cambio png
                 self.pixmap = self.qimage_mascara_abollada
+                self.alto_ventana = self.pixmap.height()
+                self.ancho_ventana = self.pixmap.width()
                 self.update()
                 QTimer.singleShot(UPTIME_ABOLLADURA, self.recuperar_forma)
 
@@ -130,8 +135,8 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
 
             self.direccion_movimiento = math.atan2(nuevo_x - self.x(), nuevo_y - self.y())
 
-            x = max(min(nuevo_x, self.ancho_pantalla - ANCHO_VENTANA), 1)
-            y = max(min(nuevo_y, self.alto_pantalla - ALTO_VENTANA), 1)
+            x = max(min(nuevo_x, self.ancho_pantalla - self.ancho_ventana), 1)
+            y = max(min(nuevo_y, self.alto_pantalla - self.alto_ventana), 1)
 
             print(str(x) + " , " + str(y) + " / " + str(self.direccion_movimiento))
 
@@ -164,6 +169,8 @@ class Ventana_Custom(Ventana_Personalizada_Madre):
         
         # Cambio png
         self.pixmap = self.qimage_mascara_normal
+        self.alto_ventana = self.pixmap.height()
+        self.ancho_ventana = self.pixmap.width()
         self.update()
 
         # TODO: Sonido

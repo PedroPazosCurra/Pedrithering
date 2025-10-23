@@ -24,6 +24,8 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
     
         qimage_bocadillo = importar_imagen_en_QImage("bocadillo.png", 0.3)
         self.pixmap = QtGui.QPixmap.fromImage(qimage_bocadillo)
+        self.alto_ventana = self.pixmap.height()
+        self.ancho_ventana = self.pixmap.width()
 
         # Error cargando pixmap
         if self.pixmap.isNull():
@@ -36,7 +38,7 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
             return
         
         # Redimensionar ventana a la imagen
-        self.resize(self.ancho_pantalla - LIMITE_INFERIOR_ANCHO, self.alto_pantalla - LIMITE_INFERIOR_ALTO) 
+        self.resize(self.ancho_pantalla, self.alto_pantalla) 
 
 
     def paintEvent(self, event):
@@ -54,8 +56,8 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
 
     def actualiza_posicion(self, x, y):
         """Método expuesto a clase padre para mover el widget con él"""
-        self.x_actual = x - BOCADILLO_X_RELATIVA
-        self.y_actual = y - BOCADILLO_Y_RELATIVA
+        self.x_actual = x - self.ancho_ventana
+        self.y_actual = y - self.alto_ventana
 
 
     def ensenha(self, mensaje = MENSAJE_DESCONOCIDO):
