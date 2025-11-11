@@ -13,5 +13,6 @@ from src.ui.interfaz import setup_interfaz
 "bestia_abominable.jpg"
 
 #probar_floyd_steinberg("bestia_abominable.jpg", 6)
+
 setup_interfaz()
 

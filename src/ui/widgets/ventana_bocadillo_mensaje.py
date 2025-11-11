@@ -1,5 +1,12 @@
+"""
+    Fichero Ventana_Bocadillo_Mensaje
+    
+    @author: pedropazoscurra
+"""
+
 from PyQt6 import QtGui, QtWidgets
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QFont
 from rsc.gestion_recursos import importar_imagen_en_QImage
 from config.constantes import *
 from src.ui.widgets.ventana_personalizada_madre import Ventana_Personalizada_Madre
@@ -15,12 +22,17 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
         self.x_actual = 0
         self.y_actual = 0
 
+        self.timer_uptime = QTimer()
+        self.timer_uptime.setSingleShot(True)
+        self.timer_uptime.timeout.connect(self.ensenha)
+
         # Label con texto
         # TODO Parametrizar posicion label con tamanho de bocadillo
         # TODO Echar un ojo a fuente, color, alinear, ...
         self.label_mensaje = QtWidgets.QLabel(self)
+        self.label_mensaje.setFont(QFont('Arial', 20))
         self.label_mensaje.setText(mensaje)
-        self.label_mensaje.move(self.x_actual, self.y_actual+50) 
+        self.label_mensaje.move(self.x_actual+20, self.y_actual+50) 
     
         qimage_bocadillo = importar_imagen_en_QImage("bocadillo.png", 0.3)
         self.pixmap = QtGui.QPixmap.fromImage(qimage_bocadillo)
@@ -49,10 +61,21 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
         painter.drawPixmap(0, 0, self.pixmap)
 
 
+    def on_event(self):
+        """Durante evento ()"""
+        if self.timer_uptime.isActive():
+            self.timer_uptime.stop()
+        self.timer_uptime.start(UPTIME_BOCADILLO)
+
+
     def loop_movimiento(self):
         """Calculo de movimiento de widget"""
-        self.move(self.x_actual, self.y_actual) 
+        choque_horizontal = (self.x_actual <= 0 or self.x_actual >= self.ancho_pantalla - self.ancho_ventana)
+        choque_vertical = (self.y_actual <= 0 or self.y_actual >= self.alto_pantalla - self.alto_ventana)
 
+        if not choque_horizontal or choque_vertical:
+            self.move(self.x_actual, self.y_actual) 
+            
 
     def actualiza_posicion(self, x, y):
         """Método expuesto a clase padre para mover el widget con él"""
