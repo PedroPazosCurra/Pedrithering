@@ -6,6 +6,8 @@
 
 from PIL import Image, ImageQt, ImageFile
 import os, sys
+from PyQt6 import QtMultimedia
+
 
 def sugerir_archivo_coincidente(nombre_incompleto : str) -> str:
     """Dado un nombre de archivo parcial, sugiere un archivo completo que sí existe en /rsc"""

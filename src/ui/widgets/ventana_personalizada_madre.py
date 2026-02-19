@@ -5,9 +5,9 @@
 """
 
 from PyQt6 import QtGui, QtWidgets
-from PyQt6.QtCore import Qt, QTimer
-from config.constantes import *
-
+from PyQt6.QtCore import Qt, QTimer, QUrl
+from config.constantes import CT_VOLUMEN_AUDIO, CT_PERIODO_ACTUALIZACION_MOVIMIENTO
+from PyQt6.QtMultimedia import QSoundEffect
 
 class Ventana_Personalizada_Madre(QtWidgets.QWidget):
     """Clase madre con comportamientos comunes que comparten otras ventanas"""
@@ -25,7 +25,7 @@ class Ventana_Personalizada_Madre(QtWidgets.QWidget):
         # Animacion de movimiento
         self.timer_movimiento = QTimer(self)
         self.timer_movimiento.timeout.connect(self.loop_movimiento)
-        self.timer_movimiento.start(PERIODO_ACTUALIZACION_MOVIMIENTO)
+        self.timer_movimiento.start(CT_PERIODO_ACTUALIZACION_MOVIMIENTO)
 
     def paintEvent(self, event):
         """Evento de actualizacion"""
@@ -39,3 +39,12 @@ class Ventana_Personalizada_Madre(QtWidgets.QWidget):
         """Calculo de movimiento de widget"""
         """Cada clase implementa el suyo, lo que importa aquí es que self.timer pueda enlazarse a self.loop_movimiento"""
         print("{0} no implementa loop_movimiento. Por defecto, queda sin implementacion.".format(type(self).__name__))
+
+    def reproducir_sonido(self, nombre_archivo_sonido : str):
+        "Reproduce un sonido con un nombre dado usando un QMediaPlayer dado"
+
+        ruta_archivo_sonido = "rsc/sonidos/" + nombre_archivo_sonido 
+        self.efecto_sonido = QSoundEffect(self)
+        self.efecto_sonido.setSource(QUrl.fromLocalFile(ruta_archivo_sonido))
+        self.efecto_sonido.setVolume(CT_VOLUMEN_AUDIO)
+        self.efecto_sonido.play()

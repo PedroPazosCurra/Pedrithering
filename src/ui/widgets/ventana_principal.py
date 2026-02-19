@@ -15,6 +15,7 @@ from src.ui.widgets.aviso_personalizado import Aviso_Personalizado
 from src.ui.widgets.ventana_bocadillo_mensaje import Ventana_Bocadillo_Mensaje
 
 
+
 class Ventana_Principal(Ventana_Personalizada_Madre):
     """Clase de ventana personalizada con forma no ortodoxa"""
 
@@ -57,7 +58,7 @@ class Ventana_Principal(Ventana_Personalizada_Madre):
         # Calculo de inercia
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.loop_calcular_inercia)
-        self.timer.start(VENTANA_PERIODO_ACTUALIZACION_INERCIA)
+        self.timer.start(CT_VENTANA_PERIODO_ACTUALIZACION_INERCIA)
 
     
     def mousePressEvent(self, event):
@@ -71,7 +72,7 @@ class Ventana_Principal(Ventana_Personalizada_Madre):
 
 
     def mouseMoveEvent(self, event):
-        """Callback de mover mouse en la pantalla"""
+        """Callback de arrastrar ventana por la pantalla"""
 
         if event.buttons() & Qt.MouseButton.LeftButton and self.agarrado:
 
@@ -112,16 +113,21 @@ class Ventana_Principal(Ventana_Personalizada_Madre):
             if choque_horizontal or choque_vertical:
 
                 # Cambio png
-                self.pixmap = self.qimage_mascara_abollada
-                self.alto_ventana = self.pixmap.height()
-                self.ancho_ventana = self.pixmap.width()
-                self.update()
-                QTimer.singleShot(UPTIME_ABOLLADURA, self.recuperar_forma)
+                if self.choques >= 10:
+                    self.pixmap = self.qimage_mascara_abollada
+                    self.alto_ventana = self.pixmap.height()
+                    self.ancho_ventana = self.pixmap.width()
+                    self.update()
 
-                # TODO: Sonido
-                # reproducir_sonido(rebote.mp3)
 
-                # Bocadillo
+                if self.choques >= 30:
+                    self.bocadillo.ensenha("¡...Regenerando...!")
+                    QTimer.singleShot(CT_UPTIME_ABOLLADURA, self.recuperar_forma)
+
+                # Sonido de rebote
+                self.reproducir_sonido("rebote.wav")
+
+                # Bocadillo dice boing
                 self.bocadillo.ensenha("Boing !")
                 self.choques += 1
 

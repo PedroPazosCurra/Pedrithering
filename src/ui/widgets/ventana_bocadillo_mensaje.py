@@ -16,7 +16,7 @@ from src.ui.widgets.aviso_personalizado import Aviso_Personalizado
 class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
     """Bocadillo que soltará la ventana principal en determinadas ocasiones"""
 
-    def __init__(self, ancho_pantalla, alto_pantalla, mensaje : str = MENSAJE_DESCONOCIDO):
+    def __init__(self, ancho_pantalla, alto_pantalla, mensaje : str = CT_MENSAJE_DESCONOCIDO):
         super().__init__(ancho_pantalla, alto_pantalla)
 
         self.x_actual = 0
@@ -65,7 +65,7 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
         """Durante evento ()"""
         if self.timer_uptime.isActive():
             self.timer_uptime.stop()
-        self.timer_uptime.start(UPTIME_BOCADILLO)
+        self.timer_uptime.start(CT_UPTIME_BOCADILLO)
 
 
     def loop_movimiento(self):
@@ -83,9 +83,9 @@ class Ventana_Bocadillo_Mensaje(Ventana_Personalizada_Madre):
         self.y_actual = y - self.alto_ventana
 
 
-    def ensenha(self, mensaje = MENSAJE_DESCONOCIDO):
+    def ensenha(self, mensaje = CT_MENSAJE_DESCONOCIDO):
         """Abstrae y expone a padre QWidget.show()"""
         self.label_mensaje.setText(mensaje)
         self.show()
 
-        QTimer.singleShot(UPTIME_BOCADILLO, self.hide)
+        QTimer.singleShot(CT_UPTIME_BOCADILLO, self.hide)
